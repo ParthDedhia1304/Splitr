@@ -3,20 +3,60 @@ const router = express.Router();
 const Group = require('../models/Group');
 const User = require('../models/User');
 const auth = require('../middleware/auth'); // Import our middleware
-
+const Expense = require('../models/Expense');
 // @route   POST /api/groups
 // @desc    Create a new group
+// @route   GET /api/groups/:groupId/balance
+// @desc    Get simplified balances for a group
+router.get('/:groupId/balance', auth, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    // 1. Fetch all expenses for this group
+    const expenses = await Expense.find({ group: groupId });
+
+    // 2. Calculate Net Balance for each user
+    let balances = {}; // { userId: amount }
+
+    expenses.forEach(expense => {
+      // Payer gets POSITIVE credit (they paid, so they are owed money)
+      const payerId = expense.paid_by.toString();
+      balances[payerId] = (balances[payerId] || 0) + expense.amount;
+
+      // Splitters get NEGATIVE debit (they consumed, so they owe money)
+      expense.splits.forEach(split => {
+        const userId = split.user.toString();
+        balances[userId] = (balances[userId] || 0) - split.amount;
+      });
+    });
+
+    // 3. Simplify the Graph
+    const transactions = simplifyDebts(balances);
+
+    // 4. Return the simplified transactions (Who pays Whom)
+    res.json({ 
+      groupId, 
+      balances, // Raw net balances (e.g., A: +50, B: -50)
+      simplifiedDebts: transactions // The instructions: "B pays A 50"
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 router.post('/', auth, async (req, res) => {
   const { name, members } = req.body; // members = array of emails or User IDs
   
   try {
     // 1. Resolve emails to User IDs (if frontend sends emails)
     // For MVP, let's assume frontend sends an array of User IDs including the creator
-    
-    const newGroup = new Group({
-      name,
-      members: [...members, req.user] // Add the creator (req.user) to the group automatically
-    });
+    const memberList = Array.isArray(members) ? members : [];
+const newGroup = new Group({
+  name,
+  members: [...memberList, req.user] 
+});
 
     const group = await newGroup.save();
     res.json(group);
@@ -38,5 +78,56 @@ router.get('/', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// Helper: Simplify Debts Algorithm
+function simplifyDebts(balances) {
+  // balances = { 'userId': 50, 'userId2': -50 }
+  let debtors = [];
+  let creditors = [];
+
+  // Separate into two lists
+  for (const [user, amount] of Object.entries(balances)) {
+    if (amount < -0.01) debtors.push({ user, amount });
+    if (amount > 0.01) creditors.push({ user, amount });
+  }
+
+  // Sort to optimize greedy approach (optional but good)
+  debtors.sort((a, b) => a.amount - b.amount); // Ascending (most negative first)
+  creditors.sort((a, b) => b.amount - a.amount); // Descending (most positive first)
+
+  let transactions = [];
+
+  let i = 0; // debtors pointer
+  let j = 0; // creditors pointer
+
+  while (i < debtors.length && j < creditors.length) {
+    let debtor = debtors[i];
+    let creditor = creditors[j];
+
+    // The amount to settle is the minimum of what's owed vs what's receivable
+    let amount = Math.min(Math.abs(debtor.amount), creditor.amount);
+    
+    // Round to 2 decimals
+    amount = Math.round(amount * 100) / 100;
+
+    if (amount > 0) {
+      transactions.push({
+        from: debtor.user,
+        to: creditor.user,
+        amount: amount
+      });
+    }
+
+    // Adjust remaining balances
+    debtor.amount += amount;
+    creditor.amount -= amount;
+
+    // Move pointers if settled
+    if (Math.abs(debtor.amount) < 0.01) i++;
+    if (creditor.amount < 0.01) j++;
+  }
+
+  return transactions;
+}
 
 module.exports = router;

@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const groupRoutes = require('./routes/groups');
+const expenseRoutes = require('./routes/expenses');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,6 +15,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 // Basic Route to test server
 app.get('/', (req, res) => {
