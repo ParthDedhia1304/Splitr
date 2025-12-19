@@ -7,7 +7,7 @@
 A modern, full-stack expense sharing application designed to simplify group finances. Splitr allows users to create groups, split bills (Equally, Exactly, or by Percentage), and track debts with a built-in **Debt Simplification Algorithm** to minimize transactions.
 
 ## 🚀 Live Demo
-- **Frontend (App):** [Click Here to View App](https://your-vercel-link-here.app) *(⚠️ Replace with your Vercel Link)*
+- **Frontend (App):** [Click Here to View App](https://splitr-brown-omega.vercel.app/) 
 - **Backend (API):** [Click Here to View API](https://splitr-backend-f0uj.onrender.com)
 
 ---
@@ -47,52 +47,36 @@ A modern, full-stack expense sharing application designed to simplify group fina
 
 Follow these steps to run the project locally on your machine.
 
-### 1. Clone the Repository
+## 1. Clone the Repository
 
 git clone [https://github.com/ParthDedhia1304/Splitr.git](https://github.com/ParthDedhia1304/Splitr.git)
 cd Splitr
 
-2. Backend Setup
+## 2. Backend Setup
 Navigate to the server folder and install dependencies:
-
-Bash
-
 cd server
 npm install
 Create a .env file in the server root:
-
-Code snippet
-
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 CLERK_SECRET_KEY=sk_test_... (Get from Clerk Dashboard)
 Run the server:
-
-Bash
-
 node index.js
-3. Frontend Setup
+
+## 3. Frontend Setup
 Open a new terminal, navigate to the client folder, and install dependencies:
-
-Bash
-
 cd client
 npm install
 Create a .env.local file in the client root:
-
-Code snippet
-
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
 Run the frontend:
-
-Bash
 npm run dev
 Visit http://localhost:3000 to see the app!
 
-🤝 Contributing
+## 🤝 Contributing
 Contributions are welcome! Please fork the repository and submit a pull request.
 
-📄 License
+## 📄 License
 This project is licensed under the MIT License.
