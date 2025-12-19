@@ -47,24 +47,32 @@ router.get('/:groupId/balance', auth, async (req, res) => {
 });
 
 // @desc    Create a new group with members (by email)
+// @route   POST /api/groups
+// @desc    Create a new group with members (by email)
 router.post('/', auth, async (req, res) => {
-  const { name, members } = req.body; // Expecting members to be an array of EMAILS now
+  const { name, members } = req.body; 
   
   try {
     let memberIds = [];
 
-    // If emails are provided, find the corresponding User IDs
     if (members && Array.isArray(members) && members.length > 0) {
+      // 1. Find users who match these emails
       const users = await User.find({ email: { $in: members } });
-      memberIds = users.map(user => user._id);
       
+      // 2. CHECK: Did we find everyone?
       if (users.length !== members.length) {
-         // Optional: Warn if some emails weren't found, but for now we proceed
-         console.log('Some emails were not found in the database');
+        // Find which emails are missing to show a helpful error
+        const foundEmails = users.map(u => u.email);
+        const missingEmails = members.filter(email => !foundEmails.includes(email));
+        
+        return res.status(400).json({ 
+          msg: `Users not found: ${missingEmails.join(', ')}. Please ask them to register first.` 
+        });
       }
+
+      memberIds = users.map(user => user._id);
     }
 
-    // Create group with found IDs + the Creator's ID
     const newGroup = new Group({
       name,
       members: [...memberIds, req.user] 

@@ -96,4 +96,45 @@ router.get('/group/:groupId', auth, async (req, res) => {
   }
 });
 
+router.get('/my-balance', auth, async (req, res) => {
+  try {
+    const userId = req.user;
+
+    // 1. Get all expenses where you are involved (either paid or in splits)
+    const expenses = await Expense.find({
+      $or: [
+        { paid_by: userId },        // You paid
+        { 'splits.user': userId }   // You were part of the split
+      ]
+    });
+
+    let totalPaid = 0;
+    let totalConsumed = 0;
+
+    expenses.forEach(exp => {
+      // 2. Calculate what you PAID
+      if (exp.paid_by.toString() === userId) {
+        totalPaid += exp.amount;
+      }
+
+      // 3. Calculate what you CONSUMED (your share)
+      const mySplit = exp.splits.find(s => s.user.toString() === userId);
+      if (mySplit) {
+        totalConsumed += mySplit.amount; // Use the specific amount calculated in the DB
+      }
+    });
+
+    // Net Balance = (What I paid) - (What I consumed)
+    // Positive = I am owed money
+    // Negative = I owe money
+    const netBalance = totalPaid - totalConsumed;
+
+    res.json({ balance: netBalance });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
