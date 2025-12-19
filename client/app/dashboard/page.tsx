@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { AxiosError } from 'axios';
-import ThemeToggle from '@/components/ThemeToggle'; // Import Toggle
+import ThemeToggle from '@/components/ThemeToggle';
+import { useAuth, UserButton } from '@clerk/nextjs'; // <--- 1. Import Clerk hooks
 
 interface Group {
   _id: string;
@@ -12,22 +13,30 @@ interface Group {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { getToken, isLoaded, isSignedIn } = useAuth(); // <--- 2. Get auth helpers
+
   const [groups, setGroups] = useState<Group[]>([]);
   const [globalBalance, setGlobalBalance] = useState<number | null>(null);
 
   const [newGroupName, setNewGroupName] = useState('');
   const [friendEmails, setFriendEmails] = useState<string[]>([]);
   const [currentEmail, setCurrentEmail] = useState('');
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // 3. Updated useEffect with Token
   useEffect(() => {
     const fetchData = async () => {
+      if (!isLoaded || !isSignedIn) return; // Wait for Clerk to load
+
       try {
+        const token = await getToken(); // Fetch secure token
+        const config = { headers: { Authorization: `Bearer ${token}` } }; // Attach to header
+
         const [groupsRes, balanceRes] = await Promise.all([
-          api.get('/groups'),
-          api.get('/expenses/my-balance')
+          api.get('/groups', config),
+          api.get('/expenses/my-balance', config)
         ]);
         setGroups(groupsRes.data);
         setGlobalBalance(balanceRes.data.balance);
@@ -38,7 +47,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [isLoaded, isSignedIn, getToken]);
 
   const handleAddEmail = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,18 +65,26 @@ export default function Dashboard() {
     setFriendEmails(friendEmails.filter(e => e !== emailToRemove));
   };
 
+  // 4. Updated handleCreateGroup with Token
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGroupName.trim()) return;
 
     try {
-      const res = await api.post('/groups', { 
-        name: newGroupName,
-        members: friendEmails 
-      });
+      const token = await getToken(); // Fetch secure token
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      const res = await api.post('/groups',
+        {
+          name: newGroupName,
+          members: friendEmails
+        },
+        config // Attach header
+      );
+
       setGroups([...groups, res.data]);
-      setNewGroupName(''); 
-      setFriendEmails([]); 
+      setNewGroupName('');
+      setFriendEmails([]);
       setCurrentEmail('');
       setError('');
     } catch (err) {
@@ -76,18 +93,12 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userName');
-    router.push('/auth');
-  };
-
-  if (loading) return <div className="flex items-center justify-center min-h-screen text-indigo-500 font-medium">Loading Dashboard...</div>;
+  if (loading || !isLoaded) return <div className="flex items-center justify-center min-h-screen text-indigo-500 font-medium">Loading Dashboard...</div>;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 md:p-12 transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
-        
+
         {/* Navbar */}
         <div className="flex justify-between items-center mb-10">
           <div className="flex items-center gap-3">
@@ -96,24 +107,20 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <button 
-              onClick={handleLogout}
-              className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-            >
-              Sign Out
-            </button>
+            {/* 5. Replaced manual logout with Clerk UserButton */}
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* LEFT COLUMN */}
           <div className="space-y-8">
-            
+
             {/* Global Balance Card */}
             <div className="bg-gradient-to-br from-indigo-600 to-violet-700 dark:from-indigo-900 dark:to-violet-950 p-8 rounded-3xl shadow-xl shadow-indigo-200 dark:shadow-none text-white relative overflow-hidden ring-1 ring-white/10">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-              
+
               <h2 className="text-indigo-100 text-sm font-semibold uppercase tracking-wider mb-1">Total Balance</h2>
               <div className="mt-2">
                 {globalBalance === null ? (
@@ -137,12 +144,12 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
               <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">Start a New Group</h2>
               {error && <p className="text-rose-500 text-sm mb-3 bg-rose-50 dark:bg-rose-900/20 p-2 rounded">{error}</p>}
-              
+
               <form onSubmit={handleCreateGroup} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Group Name</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     placeholder="e.g. Summer Trip"
@@ -150,12 +157,12 @@ export default function Dashboard() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Add Friends (Email)</label>
                   <div className="flex gap-2">
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={currentEmail}
                       onChange={(e) => setCurrentEmail(e.target.value)}
                       placeholder="friend@email.com"
@@ -189,7 +196,7 @@ export default function Dashboard() {
             <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
               Your Groups <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 rounded-full border dark:border-slate-700">{groups.length}</span>
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {groups.length === 0 ? (
                 <div className="col-span-2 py-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
@@ -197,8 +204,8 @@ export default function Dashboard() {
                 </div>
               ) : (
                 groups.map((group) => (
-                  <div 
-                    key={group._id} 
+                  <div
+                    key={group._id}
                     className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-all cursor-pointer group"
                     onClick={() => router.push(`/groups/${group._id}`)}
                   >

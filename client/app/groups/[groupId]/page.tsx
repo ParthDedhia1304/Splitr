@@ -2,7 +2,8 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import ThemeToggle from '@/components/ThemeToggle'; // Import Toggle
+import ThemeToggle from '@/components/ThemeToggle';
+import { useAuth, useUser, UserButton } from '@clerk/nextjs'; // <--- 1. Import Clerk
 
 interface Member {
   _id: string;
@@ -43,6 +44,10 @@ type SplitType = 'EQUAL' | 'EXACT' | 'PERCENTAGE';
 export default function GroupPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
   const router = useRouter();
+  
+  // 2. Clerk Hooks
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser(); // We need user details to find "My" Member ID
 
   const [group, setGroup] = useState<GroupDetails | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -58,15 +63,18 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    if (userId) setCurrentUserId(userId);
-
     const fetchData = async () => {
+      // 3. Wait for Auth to be ready
+      if (!isLoaded || !isSignedIn || !user) return;
+
       try {
+        const token = await getToken(); // Get secure token
+        const config = { headers: { Authorization: `Bearer ${token}` } }; // Create header
+
         const [groupRes, expenseRes, balanceRes] = await Promise.all([
-          api.get(`/groups/${groupId}`),
-          api.get(`/expenses/group/${groupId}`),
-          api.get(`/groups/${groupId}/balance`)
+          api.get(`/groups/${groupId}`, config),
+          api.get(`/expenses/group/${groupId}`, config),
+          api.get(`/groups/${groupId}/balance`, config)
         ]);
 
         const groupData = groupRes.data as GroupDetails;
@@ -75,6 +83,14 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
         setDebts(balanceRes.data.simplifiedDebts);
         const allMemberIds = new Set(groupData.members.map((m) => m._id));
         setSelectedMemberIds(allMemberIds);
+
+        // 4. Critical: Find "My" MongoID by matching email from Clerk
+        const myEmail = user.primaryEmailAddress?.emailAddress;
+        const me = groupData.members.find(m => m.email === myEmail);
+        if (me) {
+          setCurrentUserId(me._id);
+        }
+
       } catch (err) {
         console.error("Failed to load group data", err);
       } finally {
@@ -82,7 +98,7 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
       }
     };
     fetchData();
-  }, [groupId]);
+  }, [groupId, isLoaded, isSignedIn, user, getToken]);
 
   const toggleMember = (memberId: string) => {
     const newSelection = new Set(selectedMemberIds);
@@ -95,11 +111,15 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
     setCustomValues({ ...customValues, [userId]: val });
   };
 
+  // 5. Update Add Expense
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!group) return;
 
     try {
+      const token = await getToken();
+      const config = { headers: { Authorization: `Bearer ${token}` } }; // Attach Header
+
       let splits: SplitPayload[] = [];
       const totalAmount = Number(amount);
 
@@ -149,23 +169,29 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
         groupId: groupId,
         split_type: splitType,
         splits: splits
-      });
+      }, config); // <--- Pass config here
+
       window.location.reload();
     } catch (err) {
       alert("Failed to add expense");
     }
   };
 
+  // 6. Update Settle Up
   const handleSettleUp = async (toUser: string, amount: number) => {
     if (!confirm(`Confirm payment of ₹${amount}?`)) return;
     try {
+      const token = await getToken();
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
       await api.post('/expenses', {
         description: 'Settlement',
         amount: amount,
         groupId: groupId,
         split_type: 'EQUAL',
         splits: [{ user: toUser }]
-      });
+      }, config); // <--- Pass config here
+      
       window.location.reload();
     } catch (err) { alert("Failed"); }
   };
@@ -176,7 +202,7 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
     return member ? member.name : 'Unknown';
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen text-indigo-500">Loading Group...</div>;
+  if (loading || !isLoaded) return <div className="flex items-center justify-center min-h-screen text-indigo-500">Loading Group...</div>;
   if (!group) return <div className="p-10 text-center text-rose-500">Group not found</div>;
 
   return (
@@ -194,7 +220,11 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
                <p className="text-slate-400 text-sm">{group.members.length} members</p>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            {/* Added UserButton for consistent header */}
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
