@@ -78,57 +78,57 @@ Follow the steps below to run the project locally.
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/ParthDedhia1304/Splitr.git
-cd Splitr
+
 2️⃣ Backend Setup
+
 Navigate to the backend directory and install dependencies:
 
-bash
-Copy code
 cd server
 npm install
+
+
 Create a .env file inside the server directory:
 
-env
-Copy code
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 CLERK_SECRET_KEY=sk_test_...
+
+
 Start the backend server:
 
-bash
-Copy code
 node index.js
+
+
 Backend will be running at:
 
-text
-Copy code
 http://localhost:5000
+
 3️⃣ Frontend Setup
+
 Open a new terminal and navigate to the frontend directory:
 
-bash
-Copy code
 cd client
 npm install
+
+
 Create a .env.local file inside the client directory:
 
-env
-Copy code
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
+
+
 Start the frontend development server:
 
-bash
-Copy code
 npm run dev
+
+
 Open the app in your browser:
 
-text
-Copy code
 http://localhost:3000
+
 🤝 Contributing
+
 Contributions are welcome!
 
 Fork the repository
@@ -140,4 +140,5 @@ Commit your changes
 Open a Pull Request
 
 📄 License
+
 This project is licensed under the MIT License.
