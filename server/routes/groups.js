@@ -46,17 +46,29 @@ router.get('/:groupId/balance', auth, async (req, res) => {
   }
 });
 
+// @desc    Create a new group with members (by email)
 router.post('/', auth, async (req, res) => {
-  const { name, members } = req.body; // members = array of emails or User IDs
+  const { name, members } = req.body; // Expecting members to be an array of EMAILS now
   
   try {
-    // 1. Resolve emails to User IDs (if frontend sends emails)
-    // For MVP, let's assume frontend sends an array of User IDs including the creator
-    const memberList = Array.isArray(members) ? members : [];
-const newGroup = new Group({
-  name,
-  members: [...memberList, req.user] 
-});
+    let memberIds = [];
+
+    // If emails are provided, find the corresponding User IDs
+    if (members && Array.isArray(members) && members.length > 0) {
+      const users = await User.find({ email: { $in: members } });
+      memberIds = users.map(user => user._id);
+      
+      if (users.length !== members.length) {
+         // Optional: Warn if some emails weren't found, but for now we proceed
+         console.log('Some emails were not found in the database');
+      }
+    }
+
+    // Create group with found IDs + the Creator's ID
+    const newGroup = new Group({
+      name,
+      members: [...memberIds, req.user] 
+    });
 
     const group = await newGroup.save();
     res.json(group);
@@ -129,5 +141,16 @@ function simplifyDebts(balances) {
 
   return transactions;
 }
+
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id).populate('members', 'name email');
+    if (!group) return res.status(404).json({ msg: 'Group not found' });
+    res.json(group);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;
