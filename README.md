@@ -1,82 +1,143 @@
-# 💰 Splitr - Smart Expense Sharing App
+# 💰 Splitr – Smart Expense Sharing App
 
 ![MERN Stack](https://img.shields.io/badge/MERN-Full%20Stack-blue)
 ![Auth](https://img.shields.io/badge/Auth-Clerk-purple)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success)
 
-A modern, full-stack expense sharing application designed to simplify group finances. Splitr allows users to create groups, split bills (Equally, Exactly, or by Percentage), and track debts with a built-in **Debt Simplification Algorithm** to minimize transactions.
+Splitr is a modern, full-stack expense sharing application designed to simplify group finances.  
+It allows users to create groups, split bills (Equally, Exactly, or by Percentage), and track debts with a built-in **Debt Simplification Algorithm** to minimize transactions.
+
+---
 
 ## 🚀 Live Demo
-- **Frontend (App):** [Click Here to View App](https://splitr-brown-omega.vercel.app/) 
-- **Backend (API):** [Click Here to View API](https://splitr-backend-f0uj.onrender.com)
+
+- **Frontend (App):** https://splitr-brown-omega.vercel.app/
+- **Backend (API):** https://splitr-backend-f0uj.onrender.com
 
 ---
 
 ## ✨ Key Features
 
 ### 🔐 Authentication & Security
-- **Secure Login:** Integrated with **Clerk** for robust Google OAuth and session management.
-- **Smart Sync:** Custom middleware syncs Clerk users with the internal MongoDB database seamlessly.
+- Secure Google OAuth login using **Clerk**
+- Session management handled by Clerk
+- Custom middleware syncs Clerk users with MongoDB automatically
+
+---
 
 ### 💸 Advanced Expense Logic
-- **Flexible Splits:** Support for three splitting modes:
-  - **Equal:** Auto-divides amount among selected members.
-  - **Exact:** Specify exact amounts for each person.
-  - **Percentage:** Split by custom percentages (validated to 100%).
-- **Debt Simplification:** Uses a graph algorithm to reduce the number of transactions needed to settle up.
+- Create and manage groups
+- Add expenses with flexible split options:
+  - **Equal Split** – evenly divides the total amount
+  - **Exact Split** – specify exact amounts per user
+  - **Percentage Split** – custom percentages (validated to 100%)
+- Real-time balance tracking (who owes whom)
+- **Debt Simplification Algorithm** reduces total transactions using graph logic
+
+---
 
 ### 📊 Visual Analytics & UX
-- **Interactive Charts:** Real-time **Bar Charts** (using Recharts) visualize spending breakdowns per user.
-- **Smooth Animations:** Powered by **Framer Motion** for a premium, app-like feel.
-- **Dark Mode:** Fully responsive UI with toggleable Dark/Light themes.
-- **Responsive Design:** Optimized for Mobile and Desktop views.
+- Interactive **Bar Charts** using Recharts
+- Smooth animations powered by **Framer Motion**
+- Fully responsive design (Mobile & Desktop)
+- Dark / Light mode support
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** Next.js (React), TypeScript, Tailwind CSS, Framer Motion, Recharts
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB (Mongoose)
-- **Auth:** Clerk (Next.js & Express SDKs)
-- **Deployment:** Vercel (Client) + Render (Server)
+### Frontend
+- Next.js (React)
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Recharts
+
+### Backend
+- Node.js
+- Express.js
+
+### Database
+- MongoDB (Mongoose)
+
+### Authentication
+- Clerk (Next.js & Express SDK)
+
+### Deployment
+- **Frontend:** Vercel
+- **Backend:** Render
 
 ---
 
 ## ⚙️ Local Setup Guide
 
-Follow these steps to run the project locally on your machine.
+Follow the steps below to run the project locally.
 
-## 1. Clone the Repository
+---
 
-git clone [https://github.com/ParthDedhia1304/Splitr.git](https://github.com/ParthDedhia1304/Splitr.git)
--cd Splitr
+### 1️⃣ Clone the Repository
 
-## 2. Backend Setup
-Navigate to the server folder and install dependencies:
--cd server
--npm install
--Create a .env file in the server root:
--PORT=5000
--MONGO_URI=your_mongodb_connection_string
--CLERK_SECRET_KEY=sk_test_... (Get from Clerk Dashboard)
-Run the server:
--node index.js
+```bash
+git clone https://github.com/ParthDedhia1304/Splitr.git
+cd Splitr
+2️⃣ Backend Setup
+Navigate to the backend directory and install dependencies:
 
-## 3. Frontend Setup
-Open a new terminal, navigate to the client folder, and install dependencies:
+bash
+Copy code
+cd server
+npm install
+Create a .env file inside the server directory:
+
+env
+Copy code
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+CLERK_SECRET_KEY=sk_test_...
+Start the backend server:
+
+bash
+Copy code
+node index.js
+Backend will be running at:
+
+text
+Copy code
+http://localhost:5000
+3️⃣ Frontend Setup
+Open a new terminal and navigate to the frontend directory:
+
+bash
+Copy code
 cd client
 npm install
-Create a .env.local file in the client root:
+Create a .env.local file inside the client directory:
+
+env
+Copy code
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
-Run the frontend:
+Start the frontend development server:
+
+bash
+Copy code
 npm run dev
-Visit http://localhost:3000 to see the app!
+Open the app in your browser:
 
-## 🤝 Contributing
-Contributions are welcome! Please fork the repository and submit a pull request.
+text
+Copy code
+http://localhost:3000
+🤝 Contributing
+Contributions are welcome!
 
-## 📄 License
+Fork the repository
+
+Create a new branch
+
+Commit your changes
+
+Open a Pull Request
+
+📄 License
 This project is licensed under the MIT License.
