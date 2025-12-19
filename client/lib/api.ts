@@ -1,23 +1,13 @@
 import axios from 'axios';
 
-// 1. Create a centralized Axios instance
-const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Matches your backend port
-});
+// Use the environment variable if available (Production), otherwise fallback to localhost (Development)
+export const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-// 2. Add an "Interceptor" to automatically add the Auth Header
-// This runs before EVERY request
-api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    // We will store the User ID in localStorage after login
-    const userId = localStorage.getItem('userId');
-    if (userId) {
-      config.headers['x-user-id'] = userId;
-    }
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
+const api = axios.create({
+  baseURL: baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 export default api;
