@@ -50,18 +50,18 @@ Follow these steps to run the project locally on your machine.
 ## 1. Clone the Repository
 
 git clone [https://github.com/ParthDedhia1304/Splitr.git](https://github.com/ParthDedhia1304/Splitr.git)
-cd Splitr
+-cd Splitr
 
 ## 2. Backend Setup
 Navigate to the server folder and install dependencies:
-cd server
-npm install
-Create a .env file in the server root:
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-CLERK_SECRET_KEY=sk_test_... (Get from Clerk Dashboard)
+-cd server
+-npm install
+-Create a .env file in the server root:
+-PORT=5000
+-MONGO_URI=your_mongodb_connection_string
+-CLERK_SECRET_KEY=sk_test_... (Get from Clerk Dashboard)
 Run the server:
-node index.js
+-node index.js
 
 ## 3. Frontend Setup
 Open a new terminal, navigate to the client folder, and install dependencies:
